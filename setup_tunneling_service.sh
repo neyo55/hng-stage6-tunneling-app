@@ -40,12 +40,30 @@ else
     echo "Nginx is already installed."
 fi
 
+# Fix Nginx log file permissions
+echo "Fixing Nginx log file permissions..."
+sudo chown -R www-data:www-data /var/log/nginx
+sudo chmod -R 755 /var/log/nginx
+echo "Nginx log file permissions fixed."
+
+# Stop any running Nginx processes
+echo "Stopping any running Nginx processes..."
+sudo systemctl stop nginx
+sudo pkill nginx
+
+# Ensure no other process is using port 80
+echo "Checking for processes using port 80..."
+if sudo lsof -i :80; then
+    echo "Stopping processes using port 80..."
+    sudo fuser -k 80/tcp
+fi
+
 # Configure Nginx for Proxy Management and Wildcard Domains
 echo "Configuring Nginx..."
 NGINX_CONF="/etc/nginx/sites-available/default"
 sudo bash -c "cat > $NGINX_CONF" <<EOL
 server {
-    listen 80 default_server;
+    listen 8080 default_server;  # Change this to a different port to avoid conflict
     server_name ~^(?<subdomain>.+)\.$DOMAIN$;
 
     location / {
@@ -61,4 +79,27 @@ sudo ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
 sudo systemctl restart nginx
 echo "Nginx configured and restarted."
 
+# Make the port forwarding script executable
+chmod +x port_forward.sh
+
+# Run port forwarding script
+./port_forward.sh
+
 echo "Setup completed successfully."
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
