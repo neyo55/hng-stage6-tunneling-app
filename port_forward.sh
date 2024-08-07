@@ -14,7 +14,7 @@ function get_free_port() {
     while true; do
         # Generate a random port number between 1000 and 9999
         PORT=\$(shuf -i 1000-9999 -n 1)
-        
+
         # Check if the port is in use
         ss -ltn | grep -q ":$PORT " || break
     done
@@ -37,10 +37,14 @@ if [ "\$PAM_TYPE" = "open_session" ]; then
     # Generate the URL and store it
     URL="http://\$HOSTNAME:\$PORT"
     echo "\$URL" > /home/\$PAM_USER/access_url
-    
+
     # Output the URL to the user
     echo "Access your application at: \$URL"
-    
+
+    # Update Nginx configuration
+    sudo sed -i "s/8081/\$PORT/" /etc/nginx/sites-available/default
+    sudo systemctl reload nginx
+
 elif [ "\$PAM_TYPE" = "close_session" ]; then
     # Get the port number from the user's home directory
     PORT=\$(cat /home/\$PAM_USER/port_number)
@@ -54,6 +58,10 @@ elif [ "\$PAM_TYPE" = "close_session" ]; then
     # Clean up
     rm /home/\$PAM_USER/port_number
     rm /home/\$PAM_USER/access_url
+
+    # Restore Nginx configuration
+    sudo sed -i "s/\$PORT/8081/" /etc/nginx/sites-available/default
+    sudo systemctl reload nginx
 fi
 EOL
 
@@ -70,7 +78,7 @@ server {
     server_name _;
 
     location / {
-        proxy_pass http://localhost:\$PORT;
+        proxy_pass http://localhost:8081;  # Default port
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -81,15 +89,3 @@ EOL
 
 # Restart Nginx
 sudo systemctl restart nginx
-
-
-
-
-
-
-
-
-
-
-
-

@@ -67,7 +67,7 @@ server {
     server_name ~^(?<subdomain>.+)\.$DOMAIN$;
 
     location / {
-        proxy_pass http://localhost:\$subdomain;
+        proxy_pass http://localhost:8081;  # Default port to avoid Nginx startup issue
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -86,20 +86,3 @@ chmod +x port_forward.sh
 ./port_forward.sh
 
 echo "Setup completed successfully."
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
